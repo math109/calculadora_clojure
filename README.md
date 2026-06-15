@@ -58,9 +58,3 @@ As dependências estão definidas em `project.clj`:
 - O projeto usa `atom` para manter o estado em memória.
 - O frontend consome o backend local em `http://localhost:3002`.
 - Para executar sem APIs externas em uma prova, você pode adaptar o backend para calcular calorias usando mapas locais de alimentos e atividades.
-
-## Licença
-
-Copyright © 2026
-
-Este projeto usa a licença Eclipse Public License 2.0.
