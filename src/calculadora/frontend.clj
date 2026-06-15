@@ -14,7 +14,7 @@
           {:altura v-altura :peso v-peso :idade v-idade :sexo v-sexo})))))
 
 (defn obter-dados-alimento []
-  (println "   REGISTRAR CONSUMO DE ALIMENTO       ")
+  (println "   REGISTRAR CONSUMO DE ALIMENTO   ")
   (print "Alimento (em ingles, ex: apple, rice, chicken): ") (flush)
   (let [nome (read-line)]
     (print "Data do consumo (ex: dia/mes/ano): ") (flush)
@@ -24,7 +24,7 @@
         {:nome nome :data data :quantidade quantidade}))))
 
 (defn obter-dados-exercicio []
-  (println "   REGISTRAR ATIVIDADE FISICA    ")
+  (println "  REGISTRAR ATIVIDADE FISICA  ")
   (print "Atividade (em ingles, ex: running, cycling, swimming): ") (flush)
   (let [atividade (read-line)]
     (print "Data (ex: dia/mes/ano): ") (flush)
