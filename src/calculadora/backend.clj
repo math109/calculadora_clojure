@@ -1,5 +1,6 @@
 (ns calculadora.backend
-  (:require [compojure.core :refer [defroutes POST GET]]
+  (:require [clojure.string :as str]
+            [compojure.core :refer [defroutes POST GET]]
             [compojure.route :as route]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
@@ -14,12 +15,19 @@
     (swap! database assoc :usuario dados-usuario)
     {:status 200 :body {:status "sucesso" :mensagem "Usuário cadastrado com sucesso!"}}))
 
+(defn consultar-usuario [req]
+  (let [user (:usuario @database)]
+    (if user
+      {:status 200 :body {:usuario user}}
+      {:status 404 :body {:mensagem "Usuário não cadastrado."}})))
+
 (defn buscar-calorias-alimento [nome quantidade]
   (try
     (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
           resposta (http/get url {:query-params {"query" nome
                                                  "api_key" "DEMO_KEY"}
-                                  :as :json})
+                                  :as :json
+                                  :keywordize? true})
           primeiro-alimento (first (:foods (:body resposta)))
           nutrientes (:foodNutrients primeiro-alimento)
           
@@ -55,13 +63,13 @@
   (try
     (let [api-key "95eSMgChSMJNqGjtZ03dh8qgEuzPKvdrioKO8JVN"
           url "https://api.api-ninjas.com/v1/caloriesburned"
-          ;; A API exige o peso em libras, então fazemos a conversão
           peso-lbs (* (Double/parseDouble (str peso-kg)) 2.20462)
           resposta (http/get url {:query-params {"activity" atividade
                                                  "duration" duracao
                                                  "weight" peso-lbs}
                                   :headers {"X-Api-Key" api-key}
-                                  :as :json})
+                                  :as :json
+                                  :keywordize? true})
           itens (:body resposta)]
       
       (if (seq itens)
@@ -93,7 +101,6 @@
             :mensagem (str "Registrado: " atividade " - " calorias-perdidas " kcal gastas.")}}))
 
 (defn data->numero [data-str]
-  "Função auxiliar para converter DD/MM/AAAA para número AAAAMMBD e permitir comparação."
   (try
     (let [partes (clojure.string/split data-str #"/")
           dia (nth partes 0)
@@ -144,6 +151,7 @@
 
 (defroutes app-routes
   (POST "/api/usuario" req (salvar-usuario req))
+  (GET "/api/usuario" req (consultar-usuario req)) 
   (POST "/api/alimento" req (registrar-alimento req))
   (POST "/api/exercicio" req (registrar-exercicio req))
   (GET "/api/extrato" req (consultar-extrato req))

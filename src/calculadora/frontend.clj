@@ -1,5 +1,6 @@
 (ns calculadora.frontend
-  (:require [clj-http.client :as http]))
+  (:require [clj-http.client :as http]
+            [clojure.string :as str]))
 
 (defn obter-dados-usuario []
   (println "   CADASTRO DA CALCULADORA DE CALORIAS  ")
@@ -10,7 +11,7 @@
       (print "Digite sua idade: ") (flush)
       (let [v-idade (Integer/parseInt (read-line))]
         (print "Digite seu sexo (M/F): ") (flush)
-        (let [v-sexo (clojure.string/upper-case (read-line))]
+        (let [v-sexo (str/upper-case (read-line))]
           {:altura v-altura :peso v-peso :idade v-idade :sexo v-sexo})))))
 
 (defn obter-dados-alimento []
@@ -47,10 +48,11 @@
       (println "3. Registrar atividade fisica")
       (println "4. Consultar extrato de transacoes")
       (println "5. Consultar saldo de calorias")
-      (println "6. Sair"))
+      (println "6. Consultar meus dados") 
+      (println "7. Sair"))               
     (do
       (println "1. Cadastrar dados pessoais")
-      (println "6. Sair")))
+      (println "7. Sair")))               
   (print "Escolha uma opcao: ")
   (flush))
 
@@ -62,9 +64,9 @@
       (let [dados (obter-dados-usuario)
             sucesso? (try
                        (let [resposta (http/post "http://localhost:3002/api/usuario"
-                                                 {:form-params dados
-                                                  :content-type :json
-                                                  :as :json})]
+                                                 {:json-params dados
+                                                  :as :json
+                                                  :keywordize? true})]
                          (println "\n[Front-end] " (get-in resposta [:body :mensagem]))
                          true)
                        (catch Exception e
@@ -74,16 +76,16 @@
           (recur true)
           (recur cadastrado?)))
 
-      (= opcao "6")
+      (= opcao "7") 
       (println "\nSaindo da aplicacao...")
 
       (and cadastrado? (= opcao "2"))
       (let [dados-alimento (obter-dados-alimento)]
         (try
           (let [resposta (http/post "http://localhost:3002/api/alimento"
-                                    {:form-params dados-alimento
-                                     :content-type :json
-                                     :as :json})]
+                                    {:json-params dados-alimento
+                                     :as :json
+                                     :keywordize? true})]
             (println "\n[Front-end] " (get-in resposta [:body :mensagem])))
           (catch Exception e
             (println "\n[Erro] Falha ao comunicar com o Back-end.")))
@@ -93,9 +95,9 @@
       (let [dados-exercicio (obter-dados-exercicio)]
         (try
           (let [resposta (http/post "http://localhost:3002/api/exercicio"
-                                    {:form-params dados-exercicio
-                                     :content-type :json
-                                     :as :json})]
+                                    {:json-params dados-exercicio
+                                     :as :json
+                                     :keywordize? true})]
             (println "\n[Front-end] " (get-in resposta [:body :mensagem])))
           (catch Exception e
             (println "\n[Erro] Falha ao comunicar com o Back-end.")))
@@ -118,7 +120,7 @@
                                           (let [fim (read-line)]
                                             {:query-params {"inicio" ini "fim" fim} :as :json})))
                                       {:as :json})
-                  resposta (http/get url config-requisicao)
+                  resposta (http/get url (merge config-requisicao {:as :json :keywordize? true}))
                   transacoes (get-in resposta [:body :transacoes])]
               
               (println "\n EXTRATO DE TRANSACOES ")
@@ -146,7 +148,7 @@
                                           (let [fim (read-line)]
                                             {:query-params {"inicio" ini "fim" fim} :as :json})))
                                       {:as :json})
-                  resposta (http/get url config-requisicao)
+                  resposta (http/get url (merge config-requisicao {:as :json :keywordize? true}))
                   dados (:body resposta)]
               
               (println "\n RESULTADO DO SALDO DE CALORIAS ")
@@ -155,6 +157,20 @@
               (println "SALDO FINAL:              " (:saldo dados) " kcal"))
             (catch Exception e
               (println "\n[Erro] Falha ao consultar o saldo no Back-end."))))
+        (recur cadastrado?))
+
+      (and cadastrado? (= opcao "6"))
+      (do 
+        (try
+          (let [resposta (http/get "http://localhost:3002/api/usuario" {:as :json :keywordize? true})
+                dados-user (:usuario (:body resposta))]
+            (println "\n=== SEUS DADOS PESSOAIS ===")
+            (println "Altura:" (:altura dados-user) "m")
+            (println "Peso:  " (:peso dados-user) "kg")
+            (println "Idade: " (:idade dados-user) "anos")
+            (println "Sexo:  " (:sexo dados-user)))
+          (catch Exception e 
+            (println "\n[Erro] Falha ao consultar dados cadastrais.")))
         (recur cadastrado?))
 
       :else
